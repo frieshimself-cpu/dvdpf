@@ -117,6 +117,7 @@ async function handle(req, res) {
       amountSol: cfg.buyAmountSol,
       atMs: Date.now(),
       cornerIndex,
+      settingsVersion: settings.version, // cross-instance dedupe via Edge Config
     };
     await recordBuy(buyInfo);
 
