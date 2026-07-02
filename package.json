@@ -1,0 +1,14 @@
+{
+  "name": "dvd-pumpfun-bouncer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Retro DVD screensaver that fires a pump.fun dev buy when the logo hits a corner",
+  "dependencies": {
+    "@solana/web3.js": "^1.98.0",
+    "bs58": "^6.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
