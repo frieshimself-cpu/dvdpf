@@ -59,12 +59,20 @@ export default async function handler(req, res) {
     const next = {
       ...current,
       ...(body.oddsN !== undefined && { oddsN: body.oddsN }),
+      ...(body.oddsEndN !== undefined && { oddsEndN: body.oddsEndN }),
+      ...(body.decayHours !== undefined && { decayHours: body.decayHours }),
       ...(body.speed !== undefined && { speed: body.speed }),
       ...(body.logoW !== undefined && { logoW: body.logoW }),
       ...(body.caption !== undefined && { caption: body.caption }),
       ...(body.buysEnabled !== undefined && { buysEnabled: Boolean(body.buysEnabled) }),
       force: Boolean(body.force), // one-shot: only sticks when explicitly sent
     };
+    // Touching any odds/decay field restarts the ramp; other tweaks
+    // (caption, speed, force) leave a running decay untouched.
+    const decayTouched = body.oddsN !== undefined
+      || body.oddsEndN !== undefined
+      || body.decayHours !== undefined;
+    next.decayStartMs = decayTouched ? Date.now() : (current.decayStartMs || current.epochMs);
     // Every change starts a fresh deterministic run so all viewers stay in
     // lockstep: new version, new seed, epoch = now.
     next.version = Date.now();

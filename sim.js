@@ -31,9 +31,26 @@ export function mulberry32(seed) {
   };
 }
 
+/* Effective 1-in-N odds at an absolute wall-clock time. Interpolates
+ * linearly in probability space from oddsN to oddsEndN across decayHours,
+ * anchored at decayStartMs — launch hot, cool off on schedule. Uses only
+ * IEEE-exact ops (+,-,*,/) so every JS engine computes the same value.
+ */
+export function oddsAt(settings, absTimeMs) {
+  const start = Math.max(1, settings.oddsN);
+  const end = Math.max(1, settings.oddsEndN || settings.oddsN);
+  const hours = settings.decayHours || 0;
+  if (hours <= 0 || end === start) return start;
+  const t0 = settings.decayStartMs || settings.epochMs;
+  let frac = (absTimeMs - t0) / (hours * 3600000);
+  if (frac < 0) frac = 0;
+  if (frac > 1) frac = 1;
+  const p = 1 / start + frac * (1 / end - 1 / start);
+  return 1 / p;
+}
+
 export function createSim(settings) {
   const speed = settings.speed;
-  const oddsN = Math.max(1, settings.oddsN);
   const w = settings.logoW;
   const h = Math.round(w / 2);
   const maxX = Math.max(1, ARENA_W - w);
@@ -122,7 +139,8 @@ export function createSim(settings) {
 
     // Arming roll — exactly 1 rng call per bounce, corner or not.
     const roll = rng();
-    if (!armed && (roll < 1 / oddsN || (settings.force && bounceCount === 1))) {
+    const pNow = 1 / oddsAt(settings, settings.epochMs + t * 1000);
+    if (!armed && (roll < pNow || (settings.force && bounceCount === 1))) {
       armed = true;
     }
     if (armed) aim(isCorner || bx);
@@ -168,11 +186,19 @@ export function clampSettings(s) {
     const x = Math.round(Number(v));
     return Number.isFinite(x) ? Math.min(hi, Math.max(lo, x)) : d;
   };
+  const f = (v, lo, hi, d) => {
+    const x = Number(v);
+    return Number.isFinite(x) ? Math.min(hi, Math.max(lo, x)) : d;
+  };
+  const oddsN = n(s.oddsN, 1, 1000000, 100);
   return {
     version: n(s.version, 1, Number.MAX_SAFE_INTEGER, 1),
     seed: n(s.seed, 0, 4294967295, 1),
     epochMs: n(s.epochMs, 0, Number.MAX_SAFE_INTEGER, 0),
-    oddsN: n(s.oddsN, 1, 1000000, 100),
+    oddsN,
+    oddsEndN: n(s.oddsEndN, 1, 1000000, oddsN),
+    decayHours: f(s.decayHours, 0, 720, 0),
+    decayStartMs: n(s.decayStartMs, 0, Number.MAX_SAFE_INTEGER, 0),
     speed: n(s.speed, 60, 1200, 320),
     logoW: n(s.logoW, 80, 500, 240),
     force: Boolean(s.force),

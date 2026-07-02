@@ -158,6 +158,16 @@ input[type="range"] {
   cursor: pointer;
 }
 
+input[type="number"] {
+  width: 76px;
+  background: #000;
+  border: 1px solid var(--neon-dim);
+  color: var(--neon);
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 3px 6px;
+}
+
 input[type="password"], input[type="text"] {
   width: 100%;
   background: #000;

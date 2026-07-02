@@ -42,6 +42,21 @@ logo), `buysEnabled` (true/false), `force` (true = rig a corner within the
 next few bounces — global, one-shot). Every open tab updates on its next poll
 (≤4 s).
 
+**Launch decay** — start hot and cool off automatically:
+
+```bash
+# corners every ~1-in-8 bounces at launch, easing to 1-in-2000 over 48h
+curl -X POST https://YOUR-SITE.vercel.app/api/settings \
+  -H "content-type: application/json" -H "x-admin-key: YOUR_ADMIN_KEY" \
+  -d '{"oddsN": 8, "oddsEndN": 2000, "decayHours": 48}'
+```
+
+The corner *rate* declines linearly from start to end (deterministic — baked
+into the physics, keeps running with zero maintenance). Touching any odds
+field restarts the ramp; caption/speed/force changes leave it running. Set
+`decayHours: 0` to stop decaying. Cold-start defaults: `DEFAULT_ODDS_END`,
+`DEFAULT_DECAY_HOURS`.
+
 There is also a **hidden operator panel**: open the site with `#ctl` appended
 (`https://YOUR-SITE.vercel.app/#ctl`), enter the admin key once, and you get
 sliders for the same controls. Visitors without the hash see nothing.

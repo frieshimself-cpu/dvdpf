@@ -47,11 +47,16 @@ function num(value, fallback) {
 // Default settings must be identical on every instance (no shared state), so
 // the epoch is anchored to the current UTC day, not instance boot time.
 export function defaultSettings() {
+  const dayAnchor = Math.floor(Date.now() / 86400000) * 86400000;
+  const oddsN = num(process.env.DEFAULT_ODDS, 100);
   return clampSettings({
     version: 1,
     seed: 1,
-    epochMs: Math.floor(Date.now() / 86400000) * 86400000,
-    oddsN: num(process.env.DEFAULT_ODDS, 100),
+    epochMs: dayAnchor,
+    oddsN,
+    oddsEndN: num(process.env.DEFAULT_ODDS_END, oddsN),
+    decayHours: num(process.env.DEFAULT_DECAY_HOURS, 0),
+    decayStartMs: dayAnchor,
     speed: num(process.env.DEFAULT_SPEED, 320),
     logoW: num(process.env.DEFAULT_LOGO_W, 240),
     force: false,

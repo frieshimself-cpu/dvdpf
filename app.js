@@ -7,7 +7,7 @@
  * Corner hits are reported to /api/buy, where the server replays the same
  * physics before spending anything — clients are untrusted spectators.
  */
-import { createSim, clampSettings, ARENA_W, ARENA_H } from './sim.js';
+import { createSim, clampSettings, oddsAt, ARENA_W, ARENA_H } from './sim.js';
 
 (() => {
   'use strict';
@@ -26,6 +26,8 @@ import { createSim, clampSettings, ARENA_W, ARENA_H } from './sim.js';
     captionInput: el('captionInput'),
     buysEnabled: el('buysEnabled'), buysLabel: el('buysLabel'),
     adminKey: el('adminKey'), forceCorner: el('forceCorner'),
+    decayEnd: el('decayEnd'), decayHoursInput: el('decayHoursInput'),
+    applyDecay: el('applyDecay'), stopDecay: el('stopDecay'), decayStatus: el('decayStatus'),
     log: el('log'),
   };
 
@@ -268,11 +270,33 @@ import { createSim, clampSettings, ARENA_W, ARENA_H } from './sim.js';
   const sliderToOdds = (v) => Math.max(1, Math.round(Math.pow(10, (v / 1000) * LOG_MAX)));
   const oddsToSlider = (n) => Math.round((Math.log10(Math.min(MAX_ODDS, Math.max(1, n))) / LOG_MAX) * 1000);
 
+  function effectiveOdds() {
+    return Math.round(oddsAt(state.settings, serverNowMs()));
+  }
+
+  function updateDecayStatus() {
+    if (!isOperator || !state.settings) return;
+    const s = state.settings;
+    const now = effectiveOdds();
+    ui.oddsReadout.textContent = now === 1 ? 'EVERY bounce is a corner' : `1 in ${now.toLocaleString()} bounces`;
+    if (s.decayHours > 0 && s.oddsEndN !== s.oddsN) {
+      const endMs = (s.decayStartMs || s.epochMs) + s.decayHours * 3600000;
+      const leftMs = endMs - serverNowMs();
+      ui.decayStatus.textContent = leftMs > 0
+        ? `decaying: 1 in ${s.oddsN.toLocaleString()} → 1 in ${s.oddsEndN.toLocaleString()} · now ~1 in ${now.toLocaleString()} · ${(leftMs / 3600000).toFixed(1)}h left`
+        : `decay finished — holding at 1 in ${s.oddsEndN.toLocaleString()}`;
+    } else {
+      ui.decayStatus.textContent = 'no decay running';
+    }
+  }
+
   function updatePanelFromSettings() {
     if (!isOperator || !state.settings) return;
     const s = state.settings;
     ui.odds.value = oddsToSlider(s.oddsN);
-    ui.oddsReadout.textContent = s.oddsN === 1 ? 'EVERY bounce is a corner' : `1 in ${s.oddsN.toLocaleString()} bounces`;
+    if (document.activeElement !== ui.decayEnd) ui.decayEnd.value = s.oddsEndN;
+    if (document.activeElement !== ui.decayHoursInput && s.decayHours > 0) ui.decayHoursInput.value = s.decayHours;
+    updateDecayStatus();
     ui.speed.value = s.speed;
     ui.speedReadout.textContent = s.speed;
     ui.size.value = s.logoW;
@@ -293,7 +317,7 @@ import { createSim, clampSettings, ARENA_W, ARENA_H } from './sim.js';
       return;
     }
     const secsPerBounce = elapsed / state.sim.bounceCount;
-    const ms = secsPerBounce * state.settings.oddsN * 1000;
+    const ms = secsPerBounce * effectiveOdds() * 1000;
     let human;
     if (ms < 60000) human = `~${Math.max(1, Math.round(ms / 1000))}s`;
     else if (ms < 3600000) human = `~${(ms / 60000).toFixed(1)}min`;
@@ -355,6 +379,19 @@ import { createSim, clampSettings, ARENA_W, ARENA_H } from './sim.js';
       pushSettings({ force: true }, true);
       logLine('forcing a corner for everyone — incoming…');
     });
+    ui.applyDecay.addEventListener('click', () => {
+      pushSettings({
+        oddsN: sliderToOdds(+ui.odds.value),
+        oddsEndN: +ui.decayEnd.value,
+        decayHours: +ui.decayHoursInput.value,
+      }, true);
+      logLine('decay started — odds cool off from the slider value');
+    });
+    ui.stopDecay.addEventListener('click', () => {
+      pushSettings({ oddsN: effectiveOdds(), decayHours: 0 }, true);
+      logLine('decay stopped — frozen at the current effective odds');
+    });
+    setInterval(() => { updateDecayStatus(); updateEta(); }, 2000);
   }
 
   // ---------- boot ----------
