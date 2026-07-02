@@ -1,9 +1,10 @@
 :root {
-  --neon: #39ff14;
-  --neon-dim: #1f8f0b;
-  --panel-bg: rgba(4, 12, 4, 0.92);
+  --neon: #ff3df0;
+  --neon-dim: #8a2287;
+  --cyan: #29e6ff;
+  --panel-bg: rgba(18, 4, 28, 0.92);
   --danger: #ff3860;
-  --amber: #ffb000;
+  --amber: #29e6ff; /* legacy alias — headings/status now cyan */
 }
 
 * { box-sizing: border-box; }
@@ -13,16 +14,53 @@ html, body {
   padding: 0;
   height: 100%;
   overflow: hidden;
-  background: #000;
+  background: radial-gradient(ellipse at 50% 120%, #2a0a45 0%, #12041f 45%, #05010c 100%);
   font-family: "VT323", ui-monospace, "Cascadia Mono", Menlo, monospace;
   color: var(--neon);
+}
+
+/* synthwave sun on the horizon */
+#sun {
+  position: fixed;
+  left: 50%;
+  bottom: 12%;
+  width: min(44vmin, 420px);
+  height: min(44vmin, 420px);
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: linear-gradient(to bottom, #ffd23f 0%, #ff7a3d 35%, #ff2ec4 75%, #b01aa7 100%);
+  -webkit-mask-image: repeating-linear-gradient(to bottom, #000 0 12px, transparent 12px 18px);
+  mask-image: repeating-linear-gradient(to bottom, #000 0 12px, transparent 12px 18px);
+  opacity: 0.5;
+  filter: blur(0.5px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* vaporwave grid floor */
+#grid {
+  position: fixed;
+  left: -40%;
+  right: -40%;
+  bottom: -4%;
+  height: 55%;
+  background:
+    repeating-linear-gradient(to top, rgba(255, 61, 240, 0.4) 0 2px, transparent 2px 56px),
+    repeating-linear-gradient(to right, rgba(255, 61, 240, 0.4) 0 2px, transparent 2px 56px);
+  transform: perspective(420px) rotateX(62deg);
+  transform-origin: 50% 100%;
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.9) 30%, transparent 95%);
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.9) 30%, transparent 95%);
+  z-index: 0;
+  pointer-events: none;
 }
 
 #stage {
   position: fixed;
   inset: 0;
   display: block;
-  background: radial-gradient(ellipse at center, #050a12 0%, #000 75%);
+  z-index: 1;
+  background: transparent;
 }
 
 /* CRT scanlines overlay */
@@ -65,7 +103,7 @@ html, body {
   font-size: clamp(3rem, 12vw, 9rem);
   letter-spacing: 0.08em;
   color: #fff;
-  text-shadow: 0 0 18px var(--neon), 0 0 60px var(--neon), 4px 4px 0 #f0f;
+  text-shadow: -5px 0 var(--cyan), 5px 0 var(--neon), 0 0 34px #fff, 0 0 80px var(--neon);
   opacity: 0;
   pointer-events: none;
   z-index: 5;
@@ -82,22 +120,32 @@ html, body {
 #caption {
   position: fixed;
   bottom: 18px;
-  left: 0;
-  right: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  max-width: calc(100vw - 24px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 6px 18px;
+  border: 1px solid rgba(255, 61, 240, 0.55);
+  border-radius: 999px;
+  background: rgba(10, 2, 18, 0.72);
+  box-shadow: 0 0 18px rgba(255, 61, 240, 0.35), inset 0 0 14px rgba(41, 230, 255, 0.08);
+  backdrop-filter: blur(3px);
   text-align: center;
   z-index: 6;
   font-size: 1.15rem;
-  color: var(--neon);
-  text-shadow: 0 0 8px rgba(57, 255, 20, 0.6);
+  color: #ffb8f6;
+  text-shadow: 0 0 8px rgba(255, 61, 240, 0.6);
   pointer-events: none;
 }
 #caption .sep { color: var(--neon-dim); margin: 0 6px; }
 #caption strong { color: #fff; }
 #caption a {
-  color: var(--amber);
+  color: var(--cyan);
   pointer-events: auto;
   margin-left: 10px;
-  text-shadow: 0 0 8px rgba(255, 176, 0, 0.7);
+  text-shadow: 0 0 8px rgba(41, 230, 255, 0.8);
 }
 
 /* admin console page (/admin) */
