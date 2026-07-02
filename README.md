@@ -1,73 +1,86 @@
 # DVD CORNER BUY 📀
 
-Retro DVD screensaver for your pump.fun coin. The logo bounces around forever —
-and every time it hits a corner dead-on, the site fires a **dev buy** (default
-1 SOL) on your token. A live control panel lets you tune exactly how rare a
-corner hit is, in real time.
+Retro DVD screensaver for your pump.fun coin. **Every viewer sees the exact
+same bounce**, and every time the logo hits a corner dead-on, the site fires a
+**dev buy** (default 1 SOL) on your token. Corner rarity is controlled
+remotely — no visible admin panel on the site.
 
 ## How it works
 
-- **Frontend** (`index.html`, `app.js`, `styles.css`) — canvas screensaver with
-  rigged physics. Every wall bounce rolls a 1-in-N chance to "arm" a corner;
-  once armed, the logo's trajectory is bent (imperceptibly — overall speed is
-  kept constant) so it reaches both walls at the same instant. N comes straight
-  off the rarity slider, so dragging it changes the odds instantly, and the
-  panel shows a live "expected corner every ~X" estimate based on the measured
-  bounce rate.
-- **Backend** (`api/buy.js`) — a Vercel serverless function. On a corner hit
-  the frontend POSTs to `/api/buy`; the function builds a buy transaction via
-  [PumpPortal's local trade API](https://pumpportal.fun/trading-api/), signs it
-  with your dev wallet (key lives only in a Vercel env var, never in the
-  browser), and submits it to Solana. Works for bonding-curve coins and
-  graduated coins (`pool: auto`).
+- **Shared deterministic simulation** (`sim.js`) — the trajectory is computed
+  from server-issued settings (seed, epoch, odds, speed, size). Browsers and
+  the serverless functions run the identical engine, so everyone renders the
+  same logo position and the server can *verify* corner hits independently.
+- **Rigged odds** — every wall bounce rolls a 1-in-N chance to bend the
+  trajectory into a guaranteed corner (speed stays constant, so it looks
+  natural). N comes from the live settings.
+- **Settings API** (`api/settings.js`) — `GET` is public (clients poll every
+  4s and stay in lockstep); `POST` requires the `x-admin-key` header and
+  restarts the simulation for all viewers within seconds.
+- **Buy API** (`api/buy.js`) — viewers report corner hits, but the server
+  replays the deterministic physics and only buys if the corner really
+  happened just now. Forged requests are rejected; N viewers reporting the
+  same corner produce exactly one buy (atomic dedupe + cooldown). Buys go
+  through [PumpPortal's local trade API](https://pumpportal.fun/trading-api/)
+  signed with the dev wallet key from env vars — the key never leaves the
+  server.
+
+## Controlling it (no panel on the site)
+
+Change anything on the fly with one authenticated request:
+
+```bash
+curl -X POST https://YOUR-SITE.vercel.app/api/settings \
+  -H "content-type: application/json" \
+  -H "x-admin-key: YOUR_ADMIN_KEY" \
+  -d '{"oddsN": 500}'
+```
+
+Accepted fields (any subset): `oddsN` (1–1,000,000 — corner every 1-in-N
+bounces), `speed` (60–1200), `logoW` (80–500), `caption` (text under the
+logo), `buysEnabled` (true/false), `force` (true = rig a corner within the
+next few bounces — global, one-shot). Every open tab updates on its next poll
+(≤4 s).
+
+There is also a **hidden operator panel**: open the site with `#ctl` appended
+(`https://YOUR-SITE.vercel.app/#ctl`), enter the admin key once, and you get
+sliders for the same controls. Visitors without the hash see nothing.
 
 ## Deploy to Vercel
 
-1. Push this repo to GitHub and import it at [vercel.com/new](https://vercel.com/new)
-   (framework preset: **Other**, no build command needed). Or use the CLI:
-   `npx vercel`.
-2. In the Vercel project → **Settings → Environment Variables**, add:
+1. Import the repo at [vercel.com/new](https://vercel.com/new) (framework
+   preset **Other**, no build command). It runs immediately in dry-run mode.
+2. **Recommended:** add the *Upstash for Redis* integration (Marketplace →
+   Upstash → free tier) to the project. Without it, settings changes and buy
+   dedupe live in function memory — they work, but may reset on cold starts
+   and are not shared across concurrent instances.
+3. Add environment variables:
 
 | Variable | Required for live buys | Description |
 | --- | --- | --- |
-| `DEV_WALLET_SECRET_KEY` | ✅ | Dev wallet private key — base58 string (Phantom export) or JSON byte array (`id.json`). Mark it **Sensitive**. |
+| `DEV_WALLET_SECRET_KEY` | ✅ | Dev wallet private key — base58 (Phantom export) or JSON byte array. Mark **Sensitive**. |
 | `TOKEN_MINT` | ✅ | Your pump.fun coin's mint address. |
-| `ADMIN_KEY` | ✅ | A secret you invent. Live buys only fire for requests carrying it — enter it in the site's panel. Without it random visitors could drain the wallet. |
-| `SOLANA_RPC_URL` | recommended | Your RPC endpoint (Helius/QuickNode/Triton). Defaults to the public mainnet RPC, which is slow and rate-limited. |
-| `BUY_AMOUNT_SOL` | optional | SOL per corner hit. Default `1`. |
+| `ADMIN_KEY` | ✅ | Secret for the settings API. Until it's set, settings are locked and buys stay in dry-run. |
+| `SOLANA_RPC_URL` | recommended | Helius/QuickNode/etc. Defaults to the slow public RPC. |
+| `BUY_AMOUNT_SOL` | optional | SOL per corner. Default `1`. |
 | `BUY_COOLDOWN_SECONDS` | optional | Minimum seconds between buys. Default `60`. |
-| `SLIPPAGE_PERCENT` | optional | Default `10`. |
-| `PRIORITY_FEE_SOL` | optional | Default `0.0005`. |
-| `POOL` | optional | `auto` (default), `pump`, `pump-amm`, `raydium`, … |
-| `DRY_RUN` | optional | `true` forces simulated buys even with everything configured. |
+| `SLIPPAGE_PERCENT` / `PRIORITY_FEE_SOL` / `POOL` | optional | Defaults `10` / `0.0005` / `auto`. |
+| `DRY_RUN` | optional | `true` forces simulated buys. |
+| `DEFAULT_ODDS` / `DEFAULT_SPEED` / `DEFAULT_LOGO_W` / `DEFAULT_CAPTION` / `DEFAULT_BUYS_ENABLED` | optional | Cold-start defaults when no stored settings exist. |
 
-3. Redeploy. The panel's status line tells you whether you're **LIVE** or in
-   **DRY RUN**, and which variables are still missing.
-
-Until all three required variables are set, `/api/buy` runs in dry-run mode and
-just simulates — safe to deploy first and wire the wallet later.
-
-## Using the panel
-
-- **Corner rarity** — slider from *every bounce* to *1 in 5000 bounces*
-  (log scale), with presets. Applies instantly; the ETA readout updates live.
-- **Speed / logo size** — real-time screensaver tuning.
-- **Dev buy** — an ARM checkbox (corners only trigger buys while armed in that
-  browser tab) and the admin key field. `FORCE CORNER NOW` rigs the very next
-  bounce into a corner; `TEST BUY CALL` hits the API without waiting.
-- **Stats & event log** — bounces, corner hits, buys sent, SOL spent, and a
-  feed with Solscan links for every transaction.
+4. Redeploy. The operator panel's status line shows LIVE / DRY RUN and which
+   variables are missing.
 
 ## Safety notes
 
 - Use a **dedicated hot wallet** holding only what you're willing to spend.
-  Anything in `DEV_WALLET_SECRET_KEY` can be spent by the deployment.
-- Live buys require the `ADMIN_KEY` header, so spectators watching your site
-  see the corner hits but cannot spend your SOL. Only arm buys in a browser
-  where you've entered the key.
-- The cooldown is enforced per warm serverless instance (best effort). The
-  admin key is the real protection; the cooldown just stops accidental
-  double-fires.
+- Buys are physics-verified server-side: visitors can't forge corner hits, and
+  duplicate reports of the same corner are collapsed into one buy.
+- `ADMIN_KEY` guards the settings API (odds, buys on/off, force). Treat it
+  like a password — anyone holding it can crank corner frequency to the
+  cooldown limit.
+- The cooldown and (without Upstash) dedupe are strongest with the Redis
+  integration enabled; add it before going live.
 - Buys are real, irreversible mainnet transactions. Ape responsibly.
 
 ## Local development
@@ -77,5 +90,5 @@ npm install
 npx vercel dev
 ```
 
-Opening `index.html` directly (or via any static server) also works — with no
-API reachable the site runs as a pure screensaver and says so in the panel.
+With no API reachable the site falls back to a free-running local screensaver
+(no buys) and says so in the caption.

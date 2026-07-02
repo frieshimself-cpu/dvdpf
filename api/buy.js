@@ -1,12 +1,25 @@
 import { Connection, VersionedTransaction } from '@solana/web3.js';
 import { loadServerConfig, parseKeypair } from './_config.js';
-
-// Best-effort cooldown per warm function instance. Vercel functions are
-// stateless across cold starts, so this is a speed bump, not a vault door —
-// the ADMIN_KEY requirement is the real gate on live buys.
-let lastBuyAt = 0;
+import { createSim } from '../sim.js';
+import { getSettings, claimCorner, claimCooldown, releaseCooldown, recordBuy } from './_store.js';
 
 const PUMPPORTAL_URL = 'https://pumpportal.fun/api/trade-local';
+// A reported corner must have happened this recently to count.
+const VERIFY_WINDOW_MS = 20000;
+
+async function readBody(req) {
+  if (req.body && typeof req.body === 'object') return req.body;
+  if (typeof req.body === 'string') {
+    try { return JSON.parse(req.body); } catch { return {}; }
+  }
+  try {
+    const chunks = [];
+    for await (const c of req) chunks.push(c);
+    return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
+  } catch {
+    return {};
+  }
+}
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -15,6 +28,27 @@ export default async function handler(req, res) {
   }
 
   const cfg = loadServerConfig();
+  const body = await readBody(req);
+  const cornerIndex = Number(body.cornerIndex);
+  if (!Number.isInteger(cornerIndex) || cornerIndex < 0) {
+    return res.status(400).json({ ok: false, error: 'cornerIndex required' });
+  }
+
+  // No trust in the client: replay the deterministic sim server-side and
+  // check that this corner actually happened, just now.
+  const settings = await getSettings();
+  const now = Date.now();
+  const sim = createSim(settings);
+  sim.advanceTo((now - settings.epochMs) / 1000 + 2);
+  const corner = sim.corners.find((c) => c.index === cornerIndex);
+  const cornerAtMs = corner ? settings.epochMs + corner.time * 1000 : null;
+  if (!corner || now - cornerAtMs > VERIFY_WINDOW_MS || cornerAtMs - now > 3000) {
+    return res.status(400).json({ ok: false, error: 'corner not verified' });
+  }
+
+  if (!settings.buysEnabled) {
+    return res.status(200).json({ ok: true, skipped: 'buys are turned off' });
+  }
 
   if (cfg.dryRun) {
     return res.status(200).json({
@@ -27,24 +61,14 @@ export default async function handler(req, res) {
     });
   }
 
-  // Live path: caller must present the admin key.
-  const given = req.headers['x-admin-key'];
-  if (!given || given !== cfg.adminKey) {
-    return res.status(401).json({ ok: false, error: 'invalid or missing x-admin-key' });
+  // One buy per corner, no matter how many viewers report it.
+  if (!(await claimCorner(settings.version, cornerIndex))) {
+    return res.status(200).json({ ok: true, duplicate: true });
   }
-
-  const now = Date.now();
-  const cooldownMs = cfg.cooldownSeconds * 1000;
-  if (now - lastBuyAt < cooldownMs) {
-    const retryAfter = Math.ceil((cooldownMs - (now - lastBuyAt)) / 1000);
-    res.setHeader('Retry-After', String(retryAfter));
-    return res.status(429).json({
-      ok: false,
-      error: `cooldown — next buy allowed in ${retryAfter}s`,
-      retryAfter,
-    });
+  // Cooldown backstop: corners that land inside it are skipped, not queued.
+  if (!(await claimCooldown(cfg.cooldownSeconds))) {
+    return res.status(200).json({ ok: true, skipped: 'cooldown' });
   }
-  lastBuyAt = now; // claim the slot before the slow network calls to block double-fires
 
   try {
     const keypair = parseKeypair(cfg.secret);
@@ -76,15 +100,18 @@ export default async function handler(req, res) {
     const connection = new Connection(cfg.rpcUrl, 'confirmed');
     const signature = await connection.sendTransaction(tx, { maxRetries: 3 });
 
-    return res.status(200).json({
-      ok: true,
-      dryRun: false,
-      amountSol: cfg.buyAmountSol,
+    const buyInfo = {
       signature,
       solscan: `https://solscan.io/tx/${signature}`,
-    });
+      amountSol: cfg.buyAmountSol,
+      atMs: Date.now(),
+      cornerIndex,
+    };
+    await recordBuy(buyInfo);
+
+    return res.status(200).json({ ok: true, dryRun: false, ...buyInfo });
   } catch (err) {
-    lastBuyAt = 0; // buy never landed — release the cooldown slot
+    await releaseCooldown(); // buy never landed — free the slot
     return res.status(502).json({ ok: false, error: String(err.message || err) });
   }
 }

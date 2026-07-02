@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DVD CORNER BUY — pump.fun screensaver</title>
-  <meta name="description" content="Retro DVD screensaver. Every corner hit fires a dev buy on the pump.fun coin." />
+  <title>DVD CORNER BUY 📀</title>
+  <meta name="description" content="Retro DVD screensaver. Every corner hit fires a dev buy. Everyone sees the same bounce." />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📀</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -17,57 +17,53 @@
   <div id="flash" aria-hidden="true"></div>
   <div id="banner" aria-hidden="true">CORNER HIT!</div>
 
-  <button id="panelToggle" type="button" title="toggle control panel">☰ PANEL</button>
+  <div id="caption">
+    <span id="captionText"></span>
+    <span class="sep">·</span> corners: <strong id="capCorners">0</strong>
+    <a id="capBuy" target="_blank" rel="noopener" hidden></a>
+  </div>
 
-  <aside id="panel">
-    <h1>DVD CORNER BUY <span class="blink">▮</span></h1>
+  <!-- Operator panel: invisible to visitors, appears only with #ctl in the URL -->
+  <aside id="panel" hidden>
+    <h1>OPERATOR <span class="blink">▮</span></h1>
     <div id="serverStatus" class="status">connecting to server…</div>
 
     <section>
-      <h2>Corner rarity</h2>
+      <h2>Corner rarity (global — all viewers)</h2>
       <label class="rowlabel" for="odds">
-        odds: <strong id="oddsReadout">1 in 50 bounces</strong>
+        odds: <strong id="oddsReadout">1 in 100 bounces</strong>
       </label>
-      <input id="odds" type="range" min="0" max="1000" value="459" />
+      <input id="odds" type="range" min="0" max="1000" value="541" autocomplete="off" />
       <div id="oddsEta" class="hint">expected corner hit: —</div>
       <div class="presets">
         <button type="button" data-odds="1">EVERY</button>
         <button type="button" data-odds="10">1/10</button>
-        <button type="button" data-odds="50">1/50</button>
-        <button type="button" data-odds="500">1/500</button>
+        <button type="button" data-odds="100">1/100</button>
+        <button type="button" data-odds="1000">1/1000</button>
         <button type="button" data-odds="5000">1/5000</button>
       </div>
     </section>
 
     <section>
-      <h2>Screensaver</h2>
-      <label class="rowlabel" for="speed">speed: <strong id="speedReadout">320 px/s</strong></label>
-      <input id="speed" type="range" min="60" max="1200" value="320" />
-      <label class="rowlabel" for="size">logo size: <strong id="sizeReadout">180 px</strong></label>
-      <input id="size" type="range" min="80" max="400" value="180" />
+      <h2>Screensaver (global)</h2>
+      <label class="rowlabel" for="speed">speed: <strong id="speedReadout">320</strong></label>
+      <input id="speed" type="range" min="60" max="1200" value="320" autocomplete="off" />
+      <label class="rowlabel" for="size">logo size: <strong id="sizeReadout">240</strong></label>
+      <input id="size" type="range" min="80" max="500" value="240" autocomplete="off" />
+      <label class="rowlabel" for="caption">caption text</label>
+      <input id="captionInput" type="text" maxlength="120" autocomplete="off" />
     </section>
 
     <section>
       <h2>Dev buy</h2>
       <label class="armrow">
-        <input id="arm" type="checkbox" autocomplete="off" />
-        <span id="armLabel">buys DISARMED — corners are just for show</span>
+        <input id="buysEnabled" type="checkbox" autocomplete="off" />
+        <span id="buysLabel">buys OFF</span>
       </label>
-      <label class="rowlabel" for="adminKey">admin key (required for live buys)</label>
+      <label class="rowlabel" for="adminKey">admin key</label>
       <input id="adminKey" type="password" placeholder="x-admin-key" autocomplete="off" />
       <div class="btnrow">
-        <button id="testCorner" type="button">FORCE CORNER NOW</button>
-        <button id="testBuy" type="button">TEST BUY CALL</button>
-      </div>
-    </section>
-
-    <section>
-      <h2>Stats</h2>
-      <div class="stats">
-        <div>bounces <strong id="statBounces">0</strong></div>
-        <div>corners <strong id="statCorners">0</strong></div>
-        <div>buys sent <strong id="statBuys">0</strong></div>
-        <div>SOL spent <strong id="statSol">0</strong></div>
+        <button id="forceCorner" type="button">FORCE CORNER (GLOBAL)</button>
       </div>
     </section>
 
@@ -77,6 +73,6 @@
     </section>
   </aside>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
