@@ -27,9 +27,12 @@ export default async function handler(req, res) {
     }
     const settings = await getSettings();
     const lastBuy = await getLastBuy();
+    // Lets the admin console verify a key without mutating anything.
+    const adminOk = Boolean(cfg.adminKey) && req.headers['x-admin-key'] === cfg.adminKey;
     return res.status(200).json({
       ok: true,
       serverTime: Date.now(),
+      adminOk,
       settings,
       lastBuy,
       status: {

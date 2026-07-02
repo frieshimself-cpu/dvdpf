@@ -57,9 +57,11 @@ field restarts the ramp; caption/speed/force changes leave it running. Set
 `decayHours: 0` to stop decaying. Cold-start defaults: `DEFAULT_ODDS_END`,
 `DEFAULT_DECAY_HOURS`.
 
-There is also a **hidden operator panel**: open the site with `#ctl` appended
-(`https://YOUR-SITE.vercel.app/#ctl`), enter the admin key once, and you get
-sliders for the same controls. Visitors without the hash see nothing.
+There is also a separate **operator console** at
+`https://YOUR-SITE.vercel.app/admin` — a locked page that renders nothing but
+a key prompt until the server verifies your admin key. Once unlocked you get
+a live preview of exactly what viewers see plus sliders and buttons for all
+of the above. The public page contains no admin surface at all.
 
 ## Deploy to Vercel
 
@@ -83,8 +85,8 @@ sliders for the same controls. Visitors without the hash see nothing.
 | `DRY_RUN` | optional | `true` forces simulated buys. |
 | `DEFAULT_ODDS` / `DEFAULT_SPEED` / `DEFAULT_LOGO_W` / `DEFAULT_CAPTION` / `DEFAULT_BUYS_ENABLED` | optional | Cold-start defaults when no stored settings exist. |
 
-4. Redeploy. The operator panel's status line shows LIVE / DRY RUN and which
-   variables are missing.
+4. Redeploy. The operator console's status line shows LIVE / DRY RUN and
+   which variables are missing.
 
 ## Safety notes
 

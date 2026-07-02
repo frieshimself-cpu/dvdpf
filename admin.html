@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>operator console</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔒</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="admin">
+  <div id="scanlines" aria-hidden="true"></div>
+
+  <!-- lock screen: all anyone sees without the key -->
+  <div id="lock">
+    <h1>RESTRICTED <span class="blink">▮</span></h1>
+    <form id="lockForm">
+      <input id="lockKey" type="password" placeholder="admin key" autocomplete="off" autofocus />
+      <button type="submit">UNLOCK</button>
+    </form>
+    <div id="lockError" class="hint"></div>
+  </div>
+
+  <!-- console: rendered only after the server verifies the key -->
+  <main id="console" hidden>
+    <h1>OPERATOR CONSOLE <span class="blink">▮</span></h1>
+    <div id="serverStatus" class="status">…</div>
+
+    <section>
+      <h2>Live preview (what everyone sees)</h2>
+      <canvas id="preview" width="480" height="270"></canvas>
+      <div class="hint">
+        corners this run: <strong id="pvCorners">0</strong>
+        · <span id="pvBuy">no buys yet</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>Corner rarity (global — all viewers)</h2>
+      <label class="rowlabel" for="odds">
+        odds: <strong id="oddsReadout">…</strong>
+      </label>
+      <input id="odds" type="range" min="0" max="1000" value="541" autocomplete="off" />
+      <div id="oddsEta" class="hint">expected corner hit: —</div>
+      <div class="presets">
+        <button type="button" data-odds="1">EVERY</button>
+        <button type="button" data-odds="10">1/10</button>
+        <button type="button" data-odds="100">1/100</button>
+        <button type="button" data-odds="1000">1/1000</button>
+        <button type="button" data-odds="5000">1/5000</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Launch decay</h2>
+      <div class="rowlabel">
+        cool off to 1 in <input id="decayEnd" type="number" min="1" max="1000000" value="1000" autocomplete="off" />
+        over <input id="decayHoursInput" type="number" min="0.1" max="720" step="0.5" value="24" autocomplete="off" /> h
+      </div>
+      <div class="btnrow">
+        <button id="applyDecay" type="button">START DECAY</button>
+        <button id="stopDecay" type="button">FREEZE NOW</button>
+      </div>
+      <div id="decayStatus" class="hint">no decay running</div>
+    </section>
+
+    <section>
+      <h2>Screensaver (global)</h2>
+      <label class="rowlabel" for="speed">speed: <strong id="speedReadout">320</strong></label>
+      <input id="speed" type="range" min="60" max="1200" value="320" autocomplete="off" />
+      <label class="rowlabel" for="size">logo size: <strong id="sizeReadout">240</strong></label>
+      <input id="size" type="range" min="80" max="500" value="240" autocomplete="off" />
+      <label class="rowlabel" for="captionInput">caption text</label>
+      <input id="captionInput" type="text" maxlength="120" autocomplete="off" />
+    </section>
+
+    <section>
+      <h2>Dev buy</h2>
+      <label class="armrow">
+        <input id="buysEnabled" type="checkbox" autocomplete="off" />
+        <span id="buysLabel">buys OFF</span>
+      </label>
+      <div class="btnrow">
+        <button id="forceCorner" type="button">FORCE CORNER (GLOBAL)</button>
+        <button id="lockBtn" type="button">LOG OUT</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Event log</h2>
+      <div id="log" class="log"></div>
+    </section>
+  </main>
+
+  <script type="module" src="admin.js"></script>
+</body>
+</html>

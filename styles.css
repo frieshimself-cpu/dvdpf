@@ -100,29 +100,59 @@ html, body {
   text-shadow: 0 0 8px rgba(255, 176, 0, 0.7);
 }
 
-#panel {
-  position: fixed;
-  top: 14px;
-  right: 14px;
-  width: min(360px, calc(100vw - 28px));
-  max-height: calc(100vh - 28px);
+/* admin console page (/admin) */
+body.admin {
   overflow-y: auto;
-  z-index: 10;
+  background: radial-gradient(ellipse at center, #050a12 0%, #000 75%);
+}
+
+#lock {
+  max-width: 380px;
+  margin: 22vh auto 0;
+  text-align: center;
+  padding: 26px 24px;
+  background: var(--panel-bg);
+  border: 1px solid var(--neon-dim);
+  box-shadow: 0 0 24px rgba(57, 255, 20, 0.25);
+}
+#lockForm { display: flex; gap: 8px; margin-top: 14px; }
+#lockForm input { flex: 1; }
+#lockForm button {
+  background: #000;
+  border: 1px solid var(--neon-dim);
+  color: var(--neon);
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 5px 14px;
+  cursor: pointer;
+}
+#lockForm button:hover { border-color: var(--neon); text-shadow: 0 0 6px var(--neon); }
+#lockError { margin-top: 10px; color: var(--danger); min-height: 1.2em; }
+
+#console {
+  max-width: 500px;
+  margin: 28px auto 70px;
   background: var(--panel-bg);
   border: 1px solid var(--neon-dim);
   box-shadow: 0 0 24px rgba(57, 255, 20, 0.25), inset 0 0 40px rgba(57, 255, 20, 0.05);
-  padding: 14px 16px 18px;
-  backdrop-filter: blur(3px);
+  padding: 16px 18px 20px;
 }
-#panel[hidden] { display: none; }
 
-#panel h1 {
+#preview {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--neon-dim);
+  background: #03060c;
+}
+#console[hidden], #lock[hidden] { display: none; }
+
+#console h1, #lock h1 {
   margin: 0 0 6px;
   font-size: 1.5rem;
   letter-spacing: 0.06em;
   text-shadow: 0 0 8px var(--neon);
 }
-#panel h2 {
+#console h2 {
   margin: 14px 0 6px;
   font-size: 1.05rem;
   color: var(--amber);
@@ -130,7 +160,7 @@ html, body {
   border-bottom: 1px dashed var(--neon-dim);
   padding-bottom: 2px;
 }
-#panel section { margin-bottom: 4px; }
+#console section { margin-bottom: 4px; }
 
 .blink { animation: blink 1.1s steps(1) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
@@ -204,7 +234,7 @@ input:focus { outline: 1px solid var(--neon); }
   margin: 4px 0 8px;
 }
 .armrow input { accent-color: var(--danger); width: 18px; height: 18px; }
-.armrow.live #armLabel { color: var(--danger); text-shadow: 0 0 8px var(--danger); }
+.armrow.live #buysLabel { color: var(--danger); text-shadow: 0 0 8px var(--danger); }
 
 .log {
   font-size: 0.95rem;

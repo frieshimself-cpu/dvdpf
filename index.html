@@ -23,69 +23,6 @@
     <a id="capBuy" target="_blank" rel="noopener" hidden></a>
   </div>
 
-  <!-- Operator panel: invisible to visitors, appears only with #ctl in the URL -->
-  <aside id="panel" hidden>
-    <h1>OPERATOR <span class="blink">▮</span></h1>
-    <div id="serverStatus" class="status">connecting to server…</div>
-
-    <section>
-      <h2>Corner rarity (global — all viewers)</h2>
-      <label class="rowlabel" for="odds">
-        odds: <strong id="oddsReadout">1 in 100 bounces</strong>
-      </label>
-      <input id="odds" type="range" min="0" max="1000" value="541" autocomplete="off" />
-      <div id="oddsEta" class="hint">expected corner hit: —</div>
-      <div class="presets">
-        <button type="button" data-odds="1">EVERY</button>
-        <button type="button" data-odds="10">1/10</button>
-        <button type="button" data-odds="100">1/100</button>
-        <button type="button" data-odds="1000">1/1000</button>
-        <button type="button" data-odds="5000">1/5000</button>
-      </div>
-    </section>
-
-    <section>
-      <h2>Launch decay</h2>
-      <div class="rowlabel">
-        cool off to 1 in <input id="decayEnd" type="number" min="1" max="1000000" value="1000" autocomplete="off" />
-        over <input id="decayHoursInput" type="number" min="0.1" max="720" step="0.5" value="24" autocomplete="off" /> h
-      </div>
-      <div class="btnrow">
-        <button id="applyDecay" type="button">START DECAY</button>
-        <button id="stopDecay" type="button">FREEZE NOW</button>
-      </div>
-      <div id="decayStatus" class="hint">no decay running</div>
-    </section>
-
-    <section>
-      <h2>Screensaver (global)</h2>
-      <label class="rowlabel" for="speed">speed: <strong id="speedReadout">320</strong></label>
-      <input id="speed" type="range" min="60" max="1200" value="320" autocomplete="off" />
-      <label class="rowlabel" for="size">logo size: <strong id="sizeReadout">240</strong></label>
-      <input id="size" type="range" min="80" max="500" value="240" autocomplete="off" />
-      <label class="rowlabel" for="caption">caption text</label>
-      <input id="captionInput" type="text" maxlength="120" autocomplete="off" />
-    </section>
-
-    <section>
-      <h2>Dev buy</h2>
-      <label class="armrow">
-        <input id="buysEnabled" type="checkbox" autocomplete="off" />
-        <span id="buysLabel">buys OFF</span>
-      </label>
-      <label class="rowlabel" for="adminKey">admin key</label>
-      <input id="adminKey" type="password" placeholder="x-admin-key" autocomplete="off" />
-      <div class="btnrow">
-        <button id="forceCorner" type="button">FORCE CORNER (GLOBAL)</button>
-      </div>
-    </section>
-
-    <section>
-      <h2>Event log</h2>
-      <div id="log" class="log"></div>
-    </section>
-  </aside>
-
   <script type="module" src="app.js"></script>
 </body>
 </html>
