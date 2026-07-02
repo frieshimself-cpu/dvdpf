@@ -17,6 +17,17 @@ async function readBody(req) {
 }
 
 export default async function handler(req, res) {
+  try {
+    return await handle(req, res);
+  } catch (err) {
+    console.error('settings handler crashed:', err);
+    try {
+      return res.status(500).json({ ok: false, error: `server error: ${String((err && err.stack) || err).slice(0, 500)}` });
+    } catch { /* response already committed */ }
+  }
+}
+
+async function handle(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const cfg = loadServerConfig();
 

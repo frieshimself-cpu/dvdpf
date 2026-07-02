@@ -67,7 +67,10 @@ import { createSim, clampSettings, oddsAt, ARENA_W, ARENA_H } from './sim.js';
     try {
       const res = await fetch('/api/settings', { headers: { 'x-admin-key': key } });
       const data = await res.json();
-      if (!data.ok) throw new Error('bad response');
+      if (!data.ok) {
+        ui.lockError.textContent = data.error || `server error ${res.status}`;
+        return false;
+      }
       if (!data.status.adminKeyRequired) {
         ui.lockError.textContent = 'ADMIN_KEY env var is not set on the server — console disabled.';
         return false;
