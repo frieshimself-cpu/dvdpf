@@ -57,11 +57,21 @@ export function createSim(settings) {
   const maxY = Math.max(1, ARENA_H - h);
   const rng = mulberry32(settings.seed >>> 0);
 
-  // Deterministic starting state.
-  let x = rng() * maxX;
-  let y = rng() * maxY;
-  let vx = rng() < 0.5 ? -1 : 1;
-  let vy = (rng() < 0.5 ? -1 : 1) * 0.83;
+  // Starting state: either carried over from the previous run (so settings
+  // changes don't teleport the logo) or PRNG-derived for a fresh boot.
+  let x, y, vx, vy;
+  if (Number.isFinite(settings.startX) && Number.isFinite(settings.startY)) {
+    x = Math.min(Math.max(settings.startX, 0), maxX);
+    y = Math.min(Math.max(settings.startY, 0), maxY);
+    vx = Number.isFinite(settings.startVx) ? settings.startVx : 1;
+    vy = Number.isFinite(settings.startVy) ? settings.startVy : 0.83;
+    if (vx === 0 && vy === 0) { vx = 1; vy = 0.83; }
+  } else {
+    x = rng() * maxX;
+    y = rng() * maxY;
+    vx = rng() < 0.5 ? -1 : 1;
+    vy = (rng() < 0.5 ? -1 : 1) * 0.83;
+  }
   let t = 0; // seconds since epoch; state (x,y) is the position at time t
   let armed = false;
   let bounceCount = 0;
@@ -165,6 +175,12 @@ export function createSim(settings) {
       const dt = Math.max(0, tNow - t);
       return { x: x + vx * dt, y: y + vy * dt, w, h };
     },
+    // Instantaneous kinematic state — used to carry the logo seamlessly into
+    // a new run when settings change.
+    stateAt(tNow) {
+      const dt = Math.max(0, tNow - t);
+      return { x: x + vx * dt, y: y + vy * dt, vx, vy };
+    },
     get corners() {
       return corners;
     },
@@ -190,6 +206,12 @@ export function clampSettings(s) {
     const x = Number(v);
     return Number.isFinite(x) ? Math.min(hi, Math.max(lo, x)) : d;
   };
+  // Optional carry-over floats: null when absent, exact value when present.
+  const maybe = (v) => {
+    if (v === null || v === undefined) return null;
+    const x = Number(v);
+    return Number.isFinite(x) ? x : null;
+  };
   const oddsN = n(s.oddsN, 1, 1000000, 100);
   return {
     version: n(s.version, 1, Number.MAX_SAFE_INTEGER, 1),
@@ -204,5 +226,9 @@ export function clampSettings(s) {
     force: Boolean(s.force),
     buysEnabled: Boolean(s.buysEnabled),
     caption: String(s.caption == null ? '' : s.caption).slice(0, 120),
+    startX: maybe(s.startX),
+    startY: maybe(s.startY),
+    startVx: maybe(s.startVx),
+    startVy: maybe(s.startVy),
   };
 }

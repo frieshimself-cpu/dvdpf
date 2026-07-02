@@ -1,5 +1,6 @@
 import { loadServerConfig, parseKeypair, isAdminKey } from './_config.js';
 import { getSettings, putSettings, getLastBuy, hasDurableStore } from './_store.js';
+import { createSim } from '../sim.js';
 
 async function readBody(req) {
   if (req.body && typeof req.body === 'object') return req.body;
@@ -84,10 +85,22 @@ async function handle(req, res) {
       || body.decayHours !== undefined;
     next.decayStartMs = decayTouched ? Date.now() : (current.decayStartMs || current.epochMs);
     // Every change starts a fresh deterministic run so all viewers stay in
-    // lockstep: new version, new seed, epoch = now.
-    next.version = Date.now();
-    next.seed = next.version % 4294967295;
-    next.epochMs = Date.now();
+    // lockstep: new version, new seed, epoch = now. Carry the logo's exact
+    // position and heading into the new run so nothing visibly jumps.
+    const now = Date.now();
+    try {
+      const sim = createSim(current);
+      const tNow = (now - current.epochMs) / 1000;
+      sim.advanceTo(tNow);
+      const st = sim.stateAt(tNow);
+      next.startX = st.x;
+      next.startY = st.y;
+      next.startVx = st.vx;
+      next.startVy = st.vy;
+    } catch { /* fall back to a fresh random position */ }
+    next.version = now;
+    next.seed = now % 4294967295;
+    next.epochMs = now;
 
     const saved = await putSettings(next);
     return res.status(200).json({ ok: true, settings: saved, durableStore: hasDurableStore() });
