@@ -12,6 +12,8 @@ import { clampSettings } from '../sim.js';
 const SETTINGS_KEY = 'dvd:settings';
 const LASTBUY_KEY = 'dvd:lastbuy';
 const COOLDOWN_KEY = 'dvd:cooldown';
+const CLAIM_KEY = 'dvd:claim';
+const CLAIM_SETTLE_MS = 4000;
 
 const mem = {
   settings: null,
@@ -151,19 +153,33 @@ export async function recordBuy(info) {
   try { await edgeWrite(LASTBUY_KEY, info); } catch { /* non-fatal */ }
 }
 
-// Atomically claim a corner so N viewers reporting the same hit = 1 buy.
-// Redis gives a true atomic claim; the Edge Config tier narrows the race to
-// its write-propagation window via the lastBuy record; memory covers the rest.
+// Claim a corner so N viewers reporting the same hit = 1 buy.
+// Redis gives a true atomic claim. The Edge Config tier uses claim-then-
+// verify: write a uniquely-tagged claim, wait for concurrent writes to
+// settle (the store serializes them), and proceed only if our tag survived —
+// simultaneous reporters on different instances collapse to one winner.
 export async function claimCorner(version, cornerIndex) {
   const key = `dvd:buy:${version}:${cornerIndex}`;
   if (kvEnv()) {
     const result = await redis('SET', key, '1', 'NX', 'EX', '86400');
     return result === 'OK';
   }
-  try {
-    const last = await edgeRead(edgeKey(LASTBUY_KEY));
-    if (last && last.settingsVersion === version && last.cornerIndex === cornerIndex) return false;
-  } catch { /* fall through to memory */ }
+  const ec = edgeEnv();
+  if (ec && ec.writeToken) {
+    try {
+      const last = await edgeRead(edgeKey(LASTBUY_KEY));
+      if (last && last.settingsVersion === version && last.cornerIndex === cornerIndex) return false;
+      const existing = await edgeRead(edgeKey(CLAIM_KEY));
+      if (existing && existing.version === version && existing.cornerIndex === cornerIndex) return false;
+      const myTag = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+      await edgeWrite(CLAIM_KEY, { version, cornerIndex, tag: myTag, at: Date.now() });
+      await new Promise((r) => setTimeout(r, CLAIM_SETTLE_MS));
+      const settled = await edgeRead(edgeKey(CLAIM_KEY));
+      if (!settled || settled.tag !== myTag) return false; // another instance won
+      const last2 = await edgeRead(edgeKey(LASTBUY_KEY));
+      if (last2 && last2.settingsVersion === version && last2.cornerIndex === cornerIndex) return false;
+    } catch { /* fall through to memory */ }
+  }
   if (mem.boughtCorners.has(key)) return false;
   mem.boughtCorners.add(key);
   if (mem.boughtCorners.size > 500) mem.boughtCorners.clear();

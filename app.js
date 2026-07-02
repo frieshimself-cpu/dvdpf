@@ -104,7 +104,8 @@ import { createSim, clampSettings, ARENA_W, ARENA_H } from './sim.js';
 
   function reportCorner(cornerIndex) {
     if (state.localMode) return;
-    // Spread the stampede: every viewer reports, the server dedupes.
+    // Spread the stampede: every viewer reports, the server dedupes. The wide
+    // jitter usually lets the first report finish before the rest even fire.
     setTimeout(async () => {
       try {
         const res = await fetch('/api/buy', {
@@ -115,7 +116,7 @@ import { createSim, clampSettings, ARENA_W, ARENA_H } from './sim.js';
         const data = await res.json().catch(() => ({}));
         if (data.ok && data.signature) showBuy(data);
       } catch { /* another viewer's report will land */ }
-    }, Math.random() * 1500);
+    }, Math.random() * 3000);
   }
 
   function showBuy(buy) {
