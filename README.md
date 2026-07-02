@@ -77,7 +77,7 @@ of the above. The public page contains no admin surface at all.
 | --- | --- | --- |
 | `DEV_WALLET_SECRET_KEY` | ✅ | Dev wallet private key — base58 (Phantom export) or JSON byte array. Mark **Sensitive**. |
 | `TOKEN_MINT` | ✅ | Your pump.fun coin's mint address. |
-| `ADMIN_KEY` | ✅ | Secret for the settings API. Until it's set, settings are locked and buys stay in dry-run. |
+| `ADMIN_KEY` | optional | Overrides the built-in operator key (whose SHA-256 hash is baked into `api/_config.js`). Set it to rotate the key without a code change. |
 | `SOLANA_RPC_URL` | recommended | Helius/QuickNode/etc. Defaults to the slow public RPC. |
 | `BUY_AMOUNT_SOL` | optional | SOL per corner. Default `1`. |
 | `BUY_COOLDOWN_SECONDS` | optional | Minimum seconds between buys. Default `60`. |

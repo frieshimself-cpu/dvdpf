@@ -1,4 +1,4 @@
-import { loadServerConfig, parseKeypair } from './_config.js';
+import { loadServerConfig, parseKeypair, isAdminKey } from './_config.js';
 import { getSettings, putSettings, getLastBuy, hasDurableStore } from './_store.js';
 
 async function readBody(req) {
@@ -39,7 +39,7 @@ async function handle(req, res) {
     const settings = await getSettings();
     const lastBuy = await getLastBuy();
     // Lets the admin console verify a key without mutating anything.
-    const adminOk = Boolean(cfg.adminKey) && req.headers['x-admin-key'] === cfg.adminKey;
+    const adminOk = isAdminKey(req.headers['x-admin-key']);
     return res.status(200).json({
       ok: true,
       serverTime: Date.now(),
@@ -51,7 +51,7 @@ async function handle(req, res) {
         walletConfigured: Boolean(cfg.secret),
         walletValid,
         mintConfigured: Boolean(cfg.mint),
-        adminKeyRequired: Boolean(cfg.adminKey),
+        adminKeyRequired: true, // always — baked hash or ADMIN_KEY env
         buyAmountSol: cfg.buyAmountSol,
         cooldownSeconds: cfg.cooldownSeconds,
         durableStore: hasDurableStore(),
@@ -60,11 +60,7 @@ async function handle(req, res) {
   }
 
   if (req.method === 'POST') {
-    // Settings are locked until the operator sets ADMIN_KEY.
-    if (!cfg.adminKey) {
-      return res.status(403).json({ ok: false, error: 'settings locked — set ADMIN_KEY env var first' });
-    }
-    if (req.headers['x-admin-key'] !== cfg.adminKey) {
+    if (!isAdminKey(req.headers['x-admin-key'])) {
       return res.status(401).json({ ok: false, error: 'invalid or missing x-admin-key' });
     }
 

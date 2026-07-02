@@ -68,7 +68,7 @@ async function handle(req, res) {
       amountSol: cfg.buyAmountSol,
       note: cfg.explicitDryRun
         ? 'DRY_RUN=true is set'
-        : 'missing DEV_WALLET_SECRET_KEY, TOKEN_MINT or ADMIN_KEY',
+        : 'missing DEV_WALLET_SECRET_KEY or TOKEN_MINT',
     });
   }
 
