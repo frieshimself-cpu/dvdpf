@@ -365,9 +365,15 @@
     logLine(on ? 'buys ARMED' : 'buys disarmed', on ? 'hit' : undefined);
   });
 
-  ui.adminKey.value = localStorage.getItem('dvd_admin_key') || '';
+  // localStorage throws when storage is blocked (iframe embeds, cookie
+  // blocking) — never let that kill the boot sequence.
+  try {
+    ui.adminKey.value = localStorage.getItem('dvd_admin_key') || '';
+  } catch { /* storage blocked — key just won't persist */ }
   ui.adminKey.addEventListener('change', () => {
-    localStorage.setItem('dvd_admin_key', ui.adminKey.value.trim());
+    try {
+      localStorage.setItem('dvd_admin_key', ui.adminKey.value.trim());
+    } catch { /* storage blocked */ }
   });
 
   ui.testCorner.addEventListener('click', () => {
