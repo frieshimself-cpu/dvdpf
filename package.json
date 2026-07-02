@@ -10,5 +10,10 @@
   },
   "engines": {
     "node": "22.x"
+  },
+  "overrides": {
+    "rpc-websockets": {
+      "uuid": "^11.1.0"
+    }
   }
 }
