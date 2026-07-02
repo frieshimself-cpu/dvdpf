@@ -19,6 +19,12 @@ const CORNER_EPS = 0.01;
 const RATIO_MIN = 0.15;   // aim feasibility bounds (keeps angles sane)
 const RATIO_MAX = 6.5;
 const MAX_EVENTS = 500000;
+// Free-flight slope bounds (|vy/vx| ≈ 19°–71°). Corner jitter nudges the
+// angle every hit; without a clamp it random-walks to near-vertical or
+// near-horizontal, where the logo shuttles in a narrow band for minutes.
+// Aimed segments may exceed this briefly — they always end in a corner.
+const MIN_SLOPE = 0.35;
+const MAX_SLOPE = 2.85;
 
 export function mulberry32(seed) {
   let a = seed >>> 0;
@@ -83,7 +89,18 @@ export function createSim(settings) {
     vx = (vx / mag) * speed;
     vy = (vy / mag) * speed;
   }
+
+  function clampAngle() {
+    const ax = Math.abs(vx), ay = Math.abs(vy);
+    if (ax === 0 && ay === 0) { vx = 1; vy = 0.83; renorm(); return; }
+    const sx = vx < 0 ? -1 : 1;
+    const sy = vy < 0 ? -1 : 1;
+    const slope = ay / (ax || 1e-9);
+    if (slope < MIN_SLOPE) { vx = sx; vy = sy * MIN_SLOPE; renorm(); }
+    else if (slope > MAX_SLOPE) { vx = sx; vy = sy * MAX_SLOPE; renorm(); }
+  }
   renorm();
+  clampAngle();
 
   function aim(adjustY) {
     if (adjustY) {
@@ -141,10 +158,12 @@ export function createSim(settings) {
       corners.push({ index: cornerCount - 1, time: t });
       if (corners.length > 64) corners.shift();
       armed = false;
-      // Break the exact-retrace symmetry (fixed rng order: 2 calls).
+      // Break the exact-retrace symmetry (fixed rng order: 2 calls), then
+      // clamp so repeated jitters can't drift the angle to a degenerate one.
       vx *= 1 + (rng() - 0.5) * 0.3;
       vy *= 1 + (rng() - 0.5) * 0.3;
       renorm();
+      clampAngle();
     }
 
     // Arming roll — exactly 1 rng call per bounce, corner or not.

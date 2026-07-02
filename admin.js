@@ -109,7 +109,8 @@ import { createSim, clampSettings, oddsAt, ARENA_W, ARENA_H } from './sim.js';
   function absorb(data) {
     state.skewMs = data.serverTime - Date.now();
     state.status = data.status;
-    if (!state.settings || data.settings.version !== state.settings.version) {
+    // Monotonic: ignore stale versions from cold instances (no KV store).
+    if (!state.settings || data.settings.version > state.settings.version) {
       state.settings = clampSettings(data.settings);
       state.sim = createSim(state.settings);
       state.sim.advanceTo((serverNowMs() - state.settings.epochMs) / 1000);

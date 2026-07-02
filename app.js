@@ -60,7 +60,10 @@ import { createSim, clampSettings, ARENA_W, ARENA_H } from './sim.js';
       if (!data.ok) throw new Error('bad response');
       state.skewMs = data.serverTime - Date.now();
       state.localMode = false;
-      if (!state.settings || data.settings.version !== state.settings.version) {
+      // Only ever move forward: without a durable store, a cold Vercel
+      // instance can still answer with stale defaults, and flip-flopping
+      // between versions makes the logo jump between two trajectories.
+      if (!state.settings || data.settings.version > state.settings.version) {
         rebuildSim(clampSettings(data.settings));
       }
       if (data.lastBuy && data.lastBuy.atMs !== state.lastBuyAt) {
