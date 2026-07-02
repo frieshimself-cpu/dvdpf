@@ -61,14 +61,16 @@ async function handle(req, res) {
     return res.status(200).json({ ok: true, skipped: 'buys are turned off' });
   }
 
-  if (cfg.dryRun) {
+  // Mint can come from the TOKEN_MINT env var or (faster to change) settings.
+  const mint = cfg.mint || settings.mint;
+  if (cfg.explicitDryRun || !cfg.secret || !mint) {
     return res.status(200).json({
       ok: true,
       dryRun: true,
       amountSol: cfg.buyAmountSol,
       note: cfg.explicitDryRun
         ? 'DRY_RUN=true is set'
-        : 'missing DEV_WALLET_SECRET_KEY or TOKEN_MINT',
+        : 'missing DEV_WALLET_SECRET_KEY or token mint',
     });
   }
 
@@ -90,7 +92,7 @@ async function handle(req, res) {
       body: JSON.stringify({
         publicKey: keypair.publicKey.toBase58(),
         action: 'buy',
-        mint: cfg.mint,
+        mint,
         amount: cfg.buyAmountSol,
         denominatedInSol: 'true',
         slippage: cfg.slippagePercent,

@@ -245,6 +245,9 @@ export function clampSettings(s) {
     force: Boolean(s.force),
     buysEnabled: Boolean(s.buysEnabled),
     caption: String(s.caption == null ? '' : s.caption).slice(0, 120),
+    // Token mint lives in settings so going live is an instant settings push,
+    // not an env change + redeploy. Base58 alphabet only.
+    mint: String(s.mint == null ? '' : s.mint).replace(/[^1-9A-HJ-NP-Za-km-z]/g, '').slice(0, 44),
     startX: maybe(s.startX),
     startY: maybe(s.startY),
     startVx: maybe(s.startVx),

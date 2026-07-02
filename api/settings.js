@@ -41,6 +41,7 @@ async function handle(req, res) {
     const lastBuy = await getLastBuy();
     // Lets the admin console verify a key without mutating anything.
     const adminOk = isAdminKey(req.headers['x-admin-key']);
+    const mint = cfg.mint || settings.mint;
     return res.status(200).json({
       ok: true,
       serverTime: Date.now(),
@@ -48,10 +49,10 @@ async function handle(req, res) {
       settings,
       lastBuy,
       status: {
-        liveReady: !cfg.dryRun && walletValid,
+        liveReady: !cfg.explicitDryRun && Boolean(cfg.secret) && Boolean(mint) && walletValid,
         walletConfigured: Boolean(cfg.secret),
         walletValid,
-        mintConfigured: Boolean(cfg.mint),
+        mintConfigured: Boolean(mint),
         adminKeyRequired: true, // always — baked hash or ADMIN_KEY env
         buyAmountSol: cfg.buyAmountSol,
         cooldownSeconds: cfg.cooldownSeconds,
@@ -75,6 +76,7 @@ async function handle(req, res) {
       ...(body.speed !== undefined && { speed: body.speed }),
       ...(body.logoW !== undefined && { logoW: body.logoW }),
       ...(body.caption !== undefined && { caption: body.caption }),
+      ...(body.mint !== undefined && { mint: body.mint }),
       ...(body.buysEnabled !== undefined && { buysEnabled: Boolean(body.buysEnabled) }),
       force: Boolean(body.force), // one-shot: only sticks when explicitly sent
     };

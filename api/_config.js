@@ -34,9 +34,6 @@ export function loadServerConfig() {
     pool: (env.POOL || '').trim() || 'auto',
     cooldownSeconds: num(env.BUY_COOLDOWN_SECONDS, 60),
     explicitDryRun,
-    // Live buys need the wallet and mint; anything missing degrades to dry
-    // run. Admin auth is always configured (baked hash or ADMIN_KEY env).
-    dryRun: explicitDryRun || !secret || !mint,
   };
 }
 
