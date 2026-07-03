@@ -17,7 +17,7 @@ import { createSim, clampSettings, ARENA_W, ARENA_H } from './sim.js';
   const el = (id) => document.getElementById(id);
   const ui = {
     captionText: el('captionText'), capCorners: el('capCorners'), capBuy: el('capBuy'),
-    flash: el('flash'), banner: el('banner'),
+    flash: el('flash'), banner: el('banner'), osdTime: el('osdTime'),
   };
 
   const DVD_COLORS = ['#ff8c00', '#ffd700', '#ff0080', '#00ffff', '#ff2d2d',
@@ -205,6 +205,13 @@ import { createSim, clampSettings, ARENA_W, ARENA_H } from './sim.js';
         state.seenCorners = state.sim.cornerCount;
       }
       ui.capCorners.textContent = state.sim.cornerCount;
+
+      // VCR counter: time since this run's epoch, like a playing disc
+      if (ui.osdTime) {
+        const secs = Math.max(0, Math.floor(tNow));
+        const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), s = secs % 60;
+        ui.osdTime.textContent = `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      }
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawLogo(state.sim.positionAt(tNow));
