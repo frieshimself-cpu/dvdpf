@@ -5,6 +5,7 @@
  * deterministic sim as the public page, so it shows exactly what viewers see.
  */
 import { createSim, clampSettings, oddsAt, ARENA_W, ARENA_H } from './sim.js';
+import { drawFaucet } from './logo.js';
 
 (() => {
   'use strict';
@@ -290,12 +291,8 @@ import { createSim, clampSettings, oddsAt, ARENA_W, ARENA_H } from './sim.js';
       const sx = ui.preview.width / ARENA_W, sy = ui.preview.height / ARENA_H;
       pctx.fillStyle = '#03060c';
       pctx.fillRect(0, 0, ui.preview.width, ui.preview.height);
-      pctx.fillStyle = DVD_COLORS[state.sim.colorIndex % DVD_COLORS.length];
-      const x = pos.x * sx, y = pos.y * sy, w = pos.w * sx, h = pos.h * sy;
-      pctx.font = `italic 900 ${h * 0.8}px "Arial Black", Arial, sans-serif`;
-      pctx.textAlign = 'center';
-      pctx.textBaseline = 'middle';
-      pctx.fillText('DVD', x + w / 2, y + h / 2);
+      const color = DVD_COLORS[state.sim.colorIndex % DVD_COLORS.length];
+      drawFaucet(pctx, pos.x * sx, pos.y * sy, pos.w * sx, pos.h * sy, color);
     }
     requestAnimationFrame(drawPreview);
   }

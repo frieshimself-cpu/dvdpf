@@ -8,6 +8,7 @@
  * spectators. All controls live in the separate admin console (/admin).
  */
 import { createSim, clampSettings, ARENA_W, ARENA_H } from './sim.js';
+import { drawFaucet } from './logo.js';
 
 (() => {
   'use strict';
@@ -128,31 +129,6 @@ import { createSim, clampSettings, ARENA_W, ARENA_H } from './sim.js';
 
   const trail = []; // recent logo positions for the neon motion trail
 
-  function drawLogoAt(x, y, w, h, color, alpha, glow) {
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.translate(x, y);
-    if (glow) {
-      ctx.shadowColor = color;
-      ctx.shadowBlur = 24;
-    }
-    ctx.fillStyle = color;
-    ctx.font = `italic 900 ${h * 0.62}px "Arial Black", Arial, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('DVD', w / 2, h * 0.30);
-    ctx.shadowBlur = 0;
-    ctx.beginPath();
-    ctx.ellipse(w / 2, h * 0.78, w * 0.46, h * 0.15, 0, 0, Math.PI * 2);
-    ctx.fill();
-    if (alpha === 1) {
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.font = `900 ${h * 0.17}px "Arial Black", Arial, sans-serif`;
-      ctx.fillText('V I D E O', w / 2, h * 0.79);
-    }
-    ctx.restore();
-  }
-
   function drawLogo(pos) {
     const sx = canvas.width / ARENA_W, sy = canvas.height / ARENA_H;
     const x = pos.x * sx, y = pos.y * sy, w = pos.w * sx, h = pos.h * sy;
@@ -166,9 +142,9 @@ import { createSim, clampSettings, ARENA_W, ARENA_H } from './sim.js';
     }
     for (let i = 0; i < trail.length - 1; i++) {
       const g = trail[i];
-      drawLogoAt(g.x, g.y, g.w, g.h, g.color, 0.04 + (i / trail.length) * 0.16, false);
+      drawFaucet(ctx, g.x, g.y, g.w, g.h, g.color, 0.04 + (i / trail.length) * 0.16, false);
     }
-    drawLogoAt(x, y, w, h, color, 1, true);
+    drawFaucet(ctx, x, y, w, h, color, 1, true);
   }
 
   function drawParticles(dt) {
